@@ -40,7 +40,7 @@ sudo chown -R $USER:$USER /var/www
 # Clone repository or pull if exists
 cd /var/www
 if [ ! -d "country-currency-api" ]; then
-  git clone git@github.com:tulbadex/country-currency-api.git
+  git clone https://github.com/tulbadex/country-currency-api.git
 else
   cd country-currency-api
   git pull origin main
