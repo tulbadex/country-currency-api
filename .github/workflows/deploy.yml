@@ -18,33 +18,8 @@ jobs:
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # Setup directories with proper permissions
-          sudo mkdir -p /var/www
-          sudo chown -R $USER:$USER /var/www
-          
-          # Install Node.js if not exists
-          if ! command -v node &> /dev/null; then
-            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-          fi
-          
-          # Install PM2 if not exists
-          if ! command -v pm2 &> /dev/null; then
-            sudo npm install -g pm2
-          fi
-          
-          # Clone or update repository
-          cd /var/www
-          if [ ! -d "country-currency-api" ]; then
-            git clone https://github.com/tulbadex/country-currency-api.git
-          else
-            cd country-currency-api
-            git pull origin main
-            cd ..
-          fi
-          
-          # Deploy application
-          cd country-currency-api
+          cd /var/www/country-currency-api
+          git pull origin main
           npm install --production
-          pm2 restart country-api || pm2 start server.js --name country-api
+          pm2 restart country-api
           pm2 save

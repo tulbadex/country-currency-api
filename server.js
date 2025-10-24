@@ -91,6 +91,16 @@ app.post('/countries/refresh', async (req, res) => {
   }
 });
 
+// GET /countries/image (must be before /:name)
+app.get('/countries/image', async (req, res) => {
+  try {
+    const data = await fs.readFile('./cache/summary.json', 'utf8');
+    res.json(JSON.parse(data));
+  } catch (error) {
+    res.status(404).json({ error: 'Summary image not found' });
+  }
+});
+
 // GET /countries
 app.get('/countries', async (req, res) => {
   try {
@@ -116,7 +126,7 @@ app.get('/countries', async (req, res) => {
   }
 });
 
-// GET /countries/:name
+// GET /countries/:name (must be last)
 app.get('/countries/:name', async (req, res) => {
   try {
     const [rows] = await db.execute('SELECT * FROM countries WHERE name = ?', [req.params.name]);
@@ -157,15 +167,7 @@ app.get('/status', async (req, res) => {
   }
 });
 
-// GET /countries/image
-app.get('/countries/image', async (req, res) => {
-  try {
-    const data = await fs.readFile('./cache/summary.json', 'utf8');
-    res.json(JSON.parse(data));
-  } catch (error) {
-    res.status(404).json({ error: 'Summary image not found' });
-  }
-});
+
 
 async function generateSummaryImage() {
   const [countRows] = await db.execute('SELECT COUNT(*) as total FROM countries');
