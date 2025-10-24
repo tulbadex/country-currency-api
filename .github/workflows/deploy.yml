@@ -1,0 +1,32 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          cd /var/www
+          if [ ! -d "country-currency-api" ]; then
+            git clone git@github.com:tulbadex/country-currency-api.git
+          else
+            cd country-currency-api
+            git pull origin main
+            cd ..
+          fi
+          cd country-currency-api
+          npm install --production
+          pm2 restart country-api || pm2 start server.js --name country-api
+          pm2 save
