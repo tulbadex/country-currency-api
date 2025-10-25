@@ -31,7 +31,7 @@ A RESTful API that fetches country data from external APIs, stores it in MySQL, 
 
 1. **Clone repository:**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/tulbadex/country-currency-api.git
    cd country-currency-api
    ```
 
