@@ -3,6 +3,8 @@ const mysql = require('mysql2/promise');
 const axios = require('axios');
 const cors = require('cors');
 const fs = require('fs').promises;
+const { createCanvas } = require('canvas');
+const path = require('path');
 
 require('dotenv').config();
 
@@ -94,8 +96,8 @@ app.post('/countries/refresh', async (req, res) => {
 // GET /countries/image (must be before /:name)
 app.get('/countries/image', async (req, res) => {
   try {
-    const data = await fs.readFile('./cache/summary.json', 'utf8');
-    res.json(JSON.parse(data));
+    await fs.access('./cache/summary.png');
+    res.sendFile(path.resolve('./cache/summary.png'));
   } catch (error) {
     res.status(404).json({ error: 'Summary image not found' });
   }
@@ -173,14 +175,50 @@ async function generateSummaryImage() {
   const [countRows] = await db.execute('SELECT COUNT(*) as total FROM countries');
   const [topCountries] = await db.execute('SELECT name, estimated_gdp FROM countries ORDER BY estimated_gdp DESC LIMIT 5');
 
-  const summary = {
-    total_countries: countRows[0].total,
-    top_countries: topCountries,
-    generated_at: new Date().toISOString()
-  };
+  // Create canvas
+  const canvas = createCanvas(800, 600);
+  const ctx = canvas.getContext('2d');
 
+  // Background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 800, 600);
+
+  // Title
+  ctx.fillStyle = '#000000';
+  ctx.font = 'bold 28px Arial';
+  ctx.fillText('Country Summary Report', 50, 60);
+
+  // Total countries
+  ctx.font = '20px Arial';
+  ctx.fillText(`Total Countries: ${countRows[0].total}`, 50, 120);
+
+  // Top 5 countries header
+  ctx.font = 'bold 22px Arial';
+  ctx.fillText('Top 5 Countries by GDP:', 50, 180);
+
+  // Top countries list
+  ctx.font = '18px Arial';
+  topCountries.forEach((country, index) => {
+    const gdp = parseFloat(country.estimated_gdp || 0);
+    const gdpFormatted = gdp.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
+    ctx.fillText(`${index + 1}. ${country.name}`, 70, 220 + index * 40);
+    ctx.fillText(`   GDP: ${gdpFormatted}`, 90, 245 + index * 40);
+  });
+
+  // Timestamp
+  ctx.font = '16px Arial';
+  ctx.fillStyle = '#666666';
+  ctx.fillText(`Generated: ${new Date().toISOString()}`, 50, 550);
+
+  // Save image
   await fs.mkdir('./cache', { recursive: true });
-  await fs.writeFile('./cache/summary.json', JSON.stringify(summary, null, 2));
+  const buffer = canvas.toBuffer('image/png');
+  await fs.writeFile('./cache/summary.png', buffer);
 }
 
 const PORT = process.env.PORT || 3000;
