@@ -54,9 +54,9 @@ app.post('/countries/refresh', async (req, res) => {
 
     for (const country of countries) {
       const currencyCode = country.currencies?.[0]?.code || null;
-      const exchangeRate = currencyCode ? rates[currencyCode] || null : null;
+      const exchangeRate = currencyCode && rates[currencyCode] ? parseFloat(rates[currencyCode]) : null;
       const randomMultiplier = Math.random() * 1000 + 1000;
-      const estimatedGdp = exchangeRate ? (country.population * randomMultiplier) / exchangeRate : 0;
+      const estimatedGdp = exchangeRate ? (parseInt(country.population) * randomMultiplier) / exchangeRate : 0;
 
       await db.execute(`
         INSERT INTO countries (name, capital, region, population, currency_code, exchange_rate, estimated_gdp, flag_url)
@@ -74,7 +74,7 @@ app.post('/countries/refresh', async (req, res) => {
         country.name,
         country.capital || null,
         country.region || null,
-        country.population,
+        parseInt(country.population) || 0,
         currencyCode,
         exchangeRate,
         estimatedGdp,
@@ -118,7 +118,7 @@ app.get('/countries', async (req, res) => {
       params.push(req.query.currency);
     }
     if (req.query.sort === 'gdp_desc') {
-      query += ' ORDER BY estimated_gdp DESC';
+      query += ' ORDER BY CAST(estimated_gdp AS DECIMAL(20,2)) DESC';
     }
 
     const [rows] = await db.execute(query, params);
